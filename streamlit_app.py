@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import pickle
+import re
 
 # -----------------------------
 # Page Config & Styling
@@ -77,6 +78,8 @@ Sp_Def = st.sidebar.slider("Sp. Def", *slider_range("Sp. Def"))
 Speed = st.sidebar.slider("Speed", *slider_range("Speed"))
 Generation = st.sidebar.selectbox("Generation", sorted(preprocessed_df['Generation'].unique()))
 
+shiny_mode = st.sidebar.checkbox("✨ Show Shiny Sprite", value=False)
+
 # -----------------------------
 # Input Data
 input_df = pd.DataFrame({
@@ -115,13 +118,16 @@ col1, col2 = st.columns([2, 3])
 
 with col1:
     try:
-        # Get Pokémon ID from dataset
-        poke_id = preprocessed_df.loc[preprocessed_df["Name"] == Name, "#"].values[0]
+        # Normalize Pokémon name for URL
+        poke_name = Name.lower()
+        poke_name = re.sub(r"[^\w\s-]", "", poke_name)   # remove special chars
+        poke_name = poke_name.replace(" ", "-")
 
-        # Build sprite URL from PokéAPI (default front sprite)
-        sprite_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{poke_id}.png"
+        # Sprite URL
+        sprite_type = "shiny" if shiny_mode else "normal"
+        sprite_url = f"https://img.pokemondb.net/sprites/home/{sprite_type}/{poke_name}.png"
 
-        st.image(sprite_url, width=200, caption=f"✨ {Name}")
+        st.image(sprite_url, width=250, caption=f"✨ {Name} ({'Shiny' if shiny_mode else 'Normal'})")
     except Exception:
         st.image("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png",
                  width=200, caption="❓ Unknown Pokémon")
