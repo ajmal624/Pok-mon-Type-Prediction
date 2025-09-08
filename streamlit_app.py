@@ -29,26 +29,27 @@ st.sidebar.header("Enter Pokémon Stats")
 
 Name = st.sidebar.selectbox("Pokémon Name", sorted(preprocessed_df['Name'].unique()))
 
-Type_1 = st.sidebar.selectbox("Type 1", sorted(preprocessed_df['Type 1'].unique()))
-Type_2 = st.sidebar.selectbox("Type 2", sorted(preprocessed_df['Type 2'].dropna().unique()))
+Type_1_options = sorted(preprocessed_df['Type 1'].unique())
+Type_1 = st.sidebar.selectbox("Type 1", Type_1_options)
 
-# For numeric columns, get min/max from dataset
-Total_min, Total_max = int(preprocessed_df['Total'].min()), int(preprocessed_df['Total'].max())
-HP_min, HP_max = int(preprocessed_df['HP'].min()), int(preprocessed_df['HP'].max())
-Attack_min, Attack_max = int(preprocessed_df['Attack'].min()), int(preprocessed_df['Attack'].max())
-Defense_min, Defense_max = int(preprocessed_df['Defense'].min()), int(preprocessed_df['Defense'].max())
-Sp_Atk_min, Sp_Atk_max = int(preprocessed_df['Sp. Atk'].min()), int(preprocessed_df['Sp. Atk'].max())
-Sp_Def_min, Sp_Def_max = int(preprocessed_df['Sp. Def'].min()), int(preprocessed_df['Sp. Def'].max())
-Speed_min, Speed_max = int(preprocessed_df['Speed'].min()), int(preprocessed_df['Speed'].max())
-Generation_min, Generation_max = int(preprocessed_df['Generation'].min()), int(preprocessed_df['Generation'].max())
+# Type 2 can be null in training, so allow a "None" option
+Type_2_options = sorted(preprocessed_df['Type 2'].dropna().unique())
+Type_2_options = ["None"] + Type_2_options
+Type_2 = st.sidebar.selectbox("Type 2", Type_2_options)
+if Type_2 == "None":
+    Type_2 = None
 
-Total = st.sidebar.slider("Total", Total_min, Total_max, int(preprocessed_df['Total'].mean()))
-HP = st.sidebar.slider("HP", HP_min, HP_max, int(preprocessed_df['HP'].mean()))
-Attack = st.sidebar.slider("Attack", Attack_min, Attack_max, int(preprocessed_df['Attack'].mean()))
-Defense = st.sidebar.slider("Defense", Defense_min, Defense_max, int(preprocessed_df['Defense'].mean()))
-Sp_Atk = st.sidebar.slider("Sp. Atk", Sp_Atk_min, Sp_Atk_max, int(preprocessed_df['Sp. Atk'].mean()))
-Sp_Def = st.sidebar.slider("Sp. Def", Sp_Def_min, Sp_Def_max, int(preprocessed_df['Sp. Def'].mean()))
-Speed = st.sidebar.slider("Speed", Speed_min, Speed_max, int(preprocessed_df['Speed'].mean()))
+# Numeric sliders from dataset min/max
+def slider_range(col):
+    return int(preprocessed_df[col].min()), int(preprocessed_df[col].max()), int(preprocessed_df[col].mean())
+
+Total = st.sidebar.slider("Total", *slider_range("Total"))
+HP = st.sidebar.slider("HP", *slider_range("HP"))
+Attack = st.sidebar.slider("Attack", *slider_range("Attack"))
+Defense = st.sidebar.slider("Defense", *slider_range("Defense"))
+Sp_Atk = st.sidebar.slider("Sp. Atk", *slider_range("Sp. Atk"))
+Sp_Def = st.sidebar.slider("Sp. Def", *slider_range("Sp. Def"))
+Speed = st.sidebar.slider("Speed", *slider_range("Speed"))
 Generation = st.sidebar.selectbox("Generation", sorted(preprocessed_df['Generation'].unique()))
 
 # -----------------------------
@@ -66,11 +67,18 @@ input_df = pd.DataFrame({
     'Generation': [Generation]
 })
 
+# Fill missing Type 2 with a placeholder if None
+input_df['Type 2'] = input_df['Type 2'].fillna("None")
+
+# -----------------------------
 # Encode categorical columns
 for col in ['Type 1', 'Type 2']:
     le = label_encoders[col]
+    # If unseen category (should not happen), replace with placeholder
+    input_df[col] = input_df[col].apply(lambda x: x if x in le.classes_ else "None")
     input_df[col] = le.transform(input_df[col])
 
+# -----------------------------
 # Scale numeric columns
 num_cols = ["Total", "HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed", "Generation"]
 input_df[num_cols] = scaler.transform(input_df[num_cols])
