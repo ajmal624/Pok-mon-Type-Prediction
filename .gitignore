@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+
+# Data
+*.csv
+
+# VSCode
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Streamlit
+.streamlit/
