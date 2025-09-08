@@ -110,12 +110,21 @@ columns_order = ['Name', 'Type 1', 'Type 2', 'Total', 'HP', 'Attack', 'Defense',
 input_df = input_df[columns_order]
 
 # -----------------------------
-# Prediction
+# Prediction & Layout
 col1, col2 = st.columns([2, 3])
 
 with col1:
-    st.image("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
-             width=200, caption="⚡ Example Pokémon")
+    try:
+        # Get Pokémon ID from dataset
+        poke_id = preprocessed_df.loc[preprocessed_df["Name"] == Name, "#"].values[0]
+
+        # Build sprite URL from PokéAPI (default front sprite)
+        sprite_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{poke_id}.png"
+
+        st.image(sprite_url, width=200, caption=f"✨ {Name}")
+    except Exception:
+        st.image("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png",
+                 width=200, caption="❓ Unknown Pokémon")
 
 with col2:
     if st.button("🔮 Predict Legendary Status"):
@@ -137,4 +146,3 @@ with col2:
         except Exception as e:
             st.error("❌ Prediction failed! Please check inputs.")
             st.write(str(e))
-
