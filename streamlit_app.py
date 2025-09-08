@@ -9,7 +9,7 @@ st.title("Pokémon Legendary Predictor 🐉")
 st.write("Predict if a Pokémon is Legendary based on its stats.")
 
 # -----------------------------
-# Load Preprocessed dataset (before encoding/scaling)
+# Load Preprocessed dataset
 preprocessed_df = pd.read_csv("Preprocessed.csv")
 
 # Load preprocessing objects
@@ -24,22 +24,22 @@ with open("catboost_best_model.pkl", "rb") as f:
     model = pickle.load(f)
 
 # -----------------------------
-# Sidebar Inputs - dynamically from dataset
+# Sidebar Inputs - only values seen during training
 st.sidebar.header("Enter Pokémon Stats")
 
 Name = st.sidebar.selectbox("Pokémon Name", sorted(preprocessed_df['Name'].unique()))
 
+# Type 1 & Type 2 options from preprocessed dataset
 Type_1_options = sorted(preprocessed_df['Type 1'].unique())
 Type_1 = st.sidebar.selectbox("Type 1", Type_1_options)
 
-# Type 2 can be null in training, so allow a "None" option
+# Type 2 can be None
 Type_2_options = sorted(preprocessed_df['Type 2'].dropna().unique())
-Type_2_options = ["None"] + Type_2_options
-Type_2 = st.sidebar.selectbox("Type 2", Type_2_options)
+Type_2 = st.sidebar.selectbox("Type 2 (Optional)", ["None"] + Type_2_options)
 if Type_2 == "None":
-    Type_2 = None
+    Type_2 = "None"  # Ensure placeholder exists in LabelEncoder
 
-# Numeric sliders from dataset min/max
+# Numeric columns with min/max from dataset
 def slider_range(col):
     return int(preprocessed_df[col].min()), int(preprocessed_df[col].max()), int(preprocessed_df[col].mean())
 
@@ -67,23 +67,19 @@ input_df = pd.DataFrame({
     'Generation': [Generation]
 })
 
-# Fill missing Type 2 with a placeholder if None
-input_df['Type 2'] = input_df['Type 2'].fillna("None")
-
 # -----------------------------
-# Encode categorical columns
+# Encode categorical columns safely
 for col in ['Type 1', 'Type 2']:
     le = label_encoders[col]
-    # If unseen category (should not happen), replace with placeholder
-    input_df[col] = input_df[col].apply(lambda x: x if x in le.classes_ else "None")
+    # Replace unseen categories with placeholder
+    input_df[col] = input_df[col].apply(lambda x: x if x in le.classes_ else le.classes_[0])
     input_df[col] = le.transform(input_df[col])
 
-# -----------------------------
 # Scale numeric columns
 num_cols = ["Total", "HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed", "Generation"]
 input_df[num_cols] = scaler.transform(input_df[num_cols])
 
-# Ensure column order
+# Ensure correct column order
 columns_order = ['Type 1', 'Type 2', 'Total', 'HP', 'Attack', 'Defense',
                  'Sp. Atk', 'Sp. Def', 'Speed', 'Generation']
 input_df = input_df[columns_order]
